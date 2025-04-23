@@ -1,0 +1,62 @@
+---
+title : 'find my home....'
+format : 'dashboard'
+---
+
+# 페이지 1
+## 제목1
+안녕하세요!
+
+## 제목2
+하이하이~~~
+
+## Row {height="70%"}   <!-- heigth 70% 차지하여 출력 -->
+
+```{python}
+a = 1
+print(a)
+
+```
+
+## Row {height="30%"}    <!-- heigth 70% 차지하여 출력, 두개니까 두개가 가로 길이를 나누어 출력됨 -->
+
+```{python}
+b = 1
+print(b)
+```
+
+```{python}
+c = 1
+print(c)
+```
+
+<!--   orientation: columns 설정을 포멧에 해야함
+## Column {width=60%}    
+
+```{python}
+a = 1
+print(a)
+```
+
+## Cloumn {width=40%}
+
+```{python}
+b = 1
+print(b)
+```
+
+```{python}
+c = 1
+print(c)
+```
+
+ -->
+
+
+## Row {height=40% .tabset}
+
+### Tab 1
+
+### Tab 2
+
+# 페이지 2
