@@ -62,7 +62,8 @@ cols_to_drop = [
     'GarageQual', 'GarageCond',
     'ExterQual_Score', 'ExterCond_Score',
     'BsmtQual_Score', 'BsmtCond_Score',
-    'GarageQual_Score', 'GarageCond_Score'
+    'GarageQual_Score', 'GarageCond_Score', 
+    'Latitude', 'Longitude'
 ]
 
 df = df.drop(columns=cols_to_drop)
@@ -144,3 +145,107 @@ print(grouped.size())
 
 # 예시: 그룹별 Coefficient 총합 보기   
 print(grouped['AbsCoefficient'].mean().sort_values(ascending=False))
+
+
+
+# 예산 내 최고 스펙 조합을 찾는 함수
+def find_best_home_within_budget(df, model, scaler, encoder, num_cols, cat_cols, budget):
+    """
+    예산 내에서 가장 높은 예측 집값을 가지는 조건 조합을 찾음
+
+    Parameters:
+    - df: 전처리된 원본 데이터프레임
+    - model: 훈련된 LassoCV 모델
+    - scaler: 수치형 표준화 도구
+    - encoder: 범주형 인코더
+    - num_cols: 수치형 변수 리스트
+    - cat_cols: 범주형 변수 리스트
+    - budget: 예산 상한 (ex: 200000)
+
+    Returns:
+    - 최고 예측 가격과 해당 조건
+    """
+    best_price = -np.inf
+    best_condition = None
+
+    # 예산 내 데이터만 사용
+    df_budget = df[df['SalePrice'] <= budget]
+
+    # 중복 제거된 후보 범주 조합만 추출
+    unique_combinations = df_budget[cat_cols].drop_duplicates().astype(str)
+
+    # 수치형 평균 고정
+    input_num = pd.DataFrame([df_budget[num_cols].mean()], columns=num_cols)
+    input_num_scaled = scaler.transform(input_num)
+
+    for _, row in unique_combinations.iterrows():
+        input_cat = pd.DataFrame([row], columns=cat_cols).astype(str)
+        encoded_cat = encoder.transform(input_cat)
+        X_input = np.concatenate([input_num_scaled, encoded_cat], axis=1)
+        predicted = model.predict(X_input)[0]
+
+        if predicted > best_price:
+            best_price = predicted
+            best_condition = row.to_dict()
+
+    return best_price, best_condition
+
+# 함수 실행 (예산: $200,000)
+best_price, best_condition = find_best_home_within_budget(
+    df, lasso_cv, std_scaler, onehot, num_columns, cat_columns, budget=200000
+)
+best_price, best_condition
+
+
+# 진짜 내가 원하는 옵션을 고정하고 예산 안에서 가장 좋은 조합을 추천한다면? 
+# 고정 조건 포함 함수 다시 정의
+def find_best_with_constraints(df, model, scaler, encoder, num_cols, cat_cols, budget, fixed_conditions):
+    best_price = -np.inf
+    best_condition = None
+
+    df_budget = df[df['SalePrice'] <= budget]
+    for key, value in fixed_conditions.items():
+        df_budget = df_budget[df_budget[key].astype(str) == str(value)]
+
+    if df_budget.empty:
+        return None, "조건을 만족하는 집이 없습니다."
+
+    unique_combinations = df_budget[cat_cols].drop_duplicates().astype(str)
+    input_num = pd.DataFrame([df_budget[num_cols].mean()], columns=num_cols)
+    for k, v in fixed_conditions.items():
+        if k in num_cols:
+            input_num[k] = v
+    input_num_scaled = scaler.transform(input_num)
+
+    for _, row in unique_combinations.iterrows():
+        input_cat = pd.DataFrame([row], columns=cat_cols).astype(str)
+        for k, v in fixed_conditions.items():
+            if k in cat_cols:
+                input_cat[k] = v
+
+        encoded_cat = encoder.transform(input_cat)
+        X_input = np.concatenate([input_num_scaled, encoded_cat], axis=1)
+        predicted = model.predict(X_input)[0]
+
+        if predicted > best_price:
+            best_price = predicted
+            best_condition = row.to_dict()
+            best_condition.update({k: v for k, v in fixed_conditions.items() if k not in row})
+
+    return best_price, best_condition
+
+# 테스트 실행
+best_price_fixed, best_condition_fixed = find_best_with_constraints(
+    df=df,
+    model=lasso_cv,
+    scaler=scaler,
+    encoder=encoder,
+    num_cols=num_columns,
+    cat_cols=cat_columns,
+    budget=200000,
+    fixed_conditions={
+        'GarageCars': 2,
+        'HeatingQC': 'Gd'
+    }
+)
+best_price_fixed, best_condition_fixed
