@@ -47,9 +47,54 @@ df[["SalePrice", "ExterQual_Score", "ExterCond_Score"]].corr()
 df[["SalePrice", "GarageQual_Score", "GarageCond_Score"]].corr()
 df[["SalePrice", "BsmtQual_Score", "BsmtCond_Score"]].corr()
 
-#
+# 범주형 데이터 가중치 열 추가
 df['Exter'] = df['ExterQual_Score'] * 0.9 + df['ExterCond_Score'] * 0.1
 df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
 df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
-df['BsmtQual_Score'].unique()
 df.info()
+
+# 예산 필터링
+df = df[df['SalePrice'] >= 130000]
+df = df[df['SalePrice'] <= 200000]
+
+# x, y 분리! 
+X = df.drop(columns='SalePrice')
+y = (df['SalePrice'])
+
+# X -> 수치형, 범주형 분리
+num_columns = X.select_dtypes(include=['number']).columns
+cat_columns = X.select_dtypes(include=['object']).columns
+
+# 범주형은 원핫, 수치형은 스케일링 
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+onehot = OneHotEncoder(handle_unknown='ignore', 
+                       sparse_output=False)
+X_train_cat = onehot.fit_transform(X[cat_columns])
+
+std_scaler = StandardScaler()
+X_train_num = std_scaler.fit_transform(X[num_columns])
+
+X_train_all = np.concatenate([X_train_num, X_train_cat], axis = 1)
+
+
+from sklearn.linear_model import LassoCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+
+alpha = np.linspace(0, 0.5, 1000)
+lasso_cv = LassoCV(alphas=alpha,
+                   cv=5,
+                   max_iter=1000)
+lasso_cv.fit(X_train_all, y)
+lasso_cv.alpha_     # 아래 계산한 것들 평균내서 최적의 람다값 찾은 것
+lasso_cv.mse_path_
+lasso_cv.coef_
+
+# 절대값 기준 정렬된 인덱스
+sorted_idx = np.sort(np.abs(lasso_cv.coef_))[::-1]
+
+# 계수 값과 인덱스 함께 보기
+for i in sorted_idx:
+    print(f"Index: {i}, Coef: {lasso_cv.coef_[i]:.4f}, |Coef|: {abs(lasso_cv.coef_[i]):.4f}")
