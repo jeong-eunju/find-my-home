@@ -1,0 +1,4 @@
+- source: find_my_home.qmd
+  quarto-pub:
+    - id: 99f50d3a-86fe-43f0-8e55-f89432fc1700
+      url: https://eunju.quarto.pub/find-my-home
