@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+pd.set_option('display.max_rows', None)
 df = pd.read_excel('../find-my-home/ames_df.xlsx')
 
 # 전처리###############################################################
@@ -34,6 +34,8 @@ qual_vars = [
     "GarageQual", "GarageCond"
 ]
 
+
+
 for col in qual_vars:
     df[col] = df[col].astype(str).replace(['nan', 'NaN', '0'], 'None')  # 예외처리 강화
     df[col + "_Score"] = df[col].map(qual_map_543210)
@@ -52,6 +54,19 @@ df['Exter'] = df['ExterQual_Score'] * 0.9 + df['ExterCond_Score'] * 0.1
 df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
 df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
 df.info()
+
+cols_to_drop = [
+    'OverallQual', 'OverallCond',
+    'ExterQual', 'ExterCond',
+    'BsmtQual', 'BsmtCond',
+    'GarageQual', 'GarageCond',
+    'ExterQual_Score', 'ExterCond_Score',
+    'BsmtQual_Score', 'BsmtCond_Score',
+    'GarageQual_Score', 'GarageCond_Score'
+]
+
+df = df.drop(columns=cols_to_drop)
+
 
 # 예산 필터링
 df = df[df['SalePrice'] >= 130000]
@@ -78,6 +93,7 @@ X_train_num = std_scaler.fit_transform(X[num_columns])
 X_train_all = np.concatenate([X_train_num, X_train_cat], axis = 1)
 
 
+# LassoCV -> 가격에 많은 영향을 미치는 변수 찾기
 from sklearn.linear_model import LassoCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -90,15 +106,41 @@ lasso_cv = LassoCV(alphas=alpha,
 lasso_cv.fit(X_train_all, y)
 lasso_cv.alpha_     # 아래 계산한 것들 평균내서 최적의 람다값 찾은 것
 lasso_cv.mse_path_
-lasso_cv.coef_
+lasso_cv_coef = lasso_cv.coef_
 
-# 1. 수치형 + 범주형 컬럼 이름 뽑기
-num_feature_names = num_columns.tolist()
-cat_feature_names = onehot.get_feature_names_out(cat_columns).tolist()
-all_feature_names = num_feature_names + cat_feature_names
+# 1. 원핫 범주형 변수 이름 뽑기
+cat_feature_names = onehot.get_feature_names_out(cat_columns)
 
-# 2. 중요도 추출
-importance = pd.Series(lasso_cv.coef_, index=all_feature_names)
-importance = importance[importance != 0].sort_values(key=abs, ascending=False)
+# 2. 전체 변수 이름 (수치형 + 범주형)
+feature_names = np.concatenate([num_columns, cat_feature_names])
 
-importance
+# 3. LassoCV에서 나온 계수와 변수이름 매칭
+lasso_coef = lasso_cv.coef_
+
+# 4. DataFrame으로 정리 + 절대값 기준 정렬
+coef_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Coefficient': lasso_coef
+})
+coef_df['AbsCoefficient'] = coef_df['Coefficient'].abs()
+coef_df = coef_df.sort_values('AbsCoefficient', ascending=False)
+
+print(coef_df)
+
+# 0인 값 제거
+coef_df = coef_df[coef_df['Coefficient'] != 0]
+coef_df = coef_df.sort_values('Coefficient', ascending=False)
+coef_df.shape
+
+
+# 예시: df_sorted는 Feature, Coefficient 등이 포함된 정리된 결과 데이터프레임
+coef_df['Prefix'] = coef_df['Feature'].apply(lambda x: x.split('_')[0] if '_' in x else x)
+
+# 그룹별로 묶기 (예: 평균/합계/갯수 등 집계도 가능)
+grouped = coef_df.groupby('Prefix')
+
+# 예시: 그룹별 Feature 개수 확인
+print(grouped.size())
+
+# 예시: 그룹별 Coefficient 총합 보기   
+print(grouped['AbsCoefficient'].mean().sort_values(ascending=False))
