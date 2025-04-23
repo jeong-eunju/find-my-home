@@ -1,62 +1,109 @@
 ---
-title : 'find my home....'
-format : 'dashboard'
+title: "이런 집은 살아남는다! — 선택받는 집의 조건 분석"
+format: dashboard
+params:
+  full_bath:
+    label: "욕실 수 (FullBath 이상)"
+    value: 2
+    input: slider
+    min: 0
+    max: 4
+  bedroom:
+    label: "방 개수 (BedroomAbvGr 이상)"
+    value: 3
+    input: slider
+    min: 0
+    max: 5
+  fence:
+    label: "Fence 있음?"
+    value: true
+    input: checkbox
+  kitchen_qual:
+    label: "Kitchen 품질"
+    value: "Any"
+    input: select
+    choices: ["Any", "TA", "Gd", "Ex"]
+  fireplace:
+    label: "벽난로 개수 (Fireplaces 이상)"
+    value: 1
+    input: slider
+    min: 0
+    max: 3
 ---
 
-# 페이지 1
-## 제목1
-안녕하세요!
+# 🏡 이런 집은 살아남는다!
+## 🎯 선택받는 집의 조건 분석 대시보드
 
-## 제목2
-하이하이~~~
+> ✔️ 기본 조건을 충족한 집들 중, 사용자가 선택한 옵션에 따라 어떤 집이 살아남는지 확인해보세요!
 
-## Row {height="70%"}   <!-- heigth 70% 차지하여 출력 -->
+## Row {height="20%"}
 
 ```{python}
-a = 1
-print(a)
+import pandas as pd
+import plotly.express as px
 
+# 샘플 데이터
+sample_data = pd.DataFrame({
+    'SalePrice': [200000, 250000, 180000, 300000, 220000],
+    'Latitude': [42.03, 42.04, 42.02, 42.05, 42.01],
+    'Longitude': [-93.62, -93.60, -93.63, -93.61, -93.64],
+    'FullBath': [1, 2, 1, 3, 2],
+    'BedroomAbvGr': [2, 3, 2, 4, 3],
+    'KitchenQual': ["TA", "Gd", "TA", "Ex", "Gd"],
+    'Fence': ["None", "GdPrv", "None", "MnPrv", "GdPrv"],
+    'Fireplaces': [0, 1, 0, 2, 1],
+    'Prop_Addr': ["123 A St", "456 B St", "789 C St", "101 D St", "202 E St"]
+})
+
+# Jupyter에서 돌릴 때 params 직접 설정
+try:
+    params
+except NameError:
+    params = {
+        'full_bath': 2,
+        'bedroom': 3,
+        'kitchen_qual': "Gd",
+        'fence': True,
+        'fireplace': 1
+    }
+
+# 필터링 기준
+full_bath = params['full_bath']
+bedroom = params['bedroom']
+kitchen_qual = params['kitchen_qual']
+fence = params['fence']
+fireplace = params['fireplace']
+
+# 조건 필터링
+filtered_data = sample_data[
+    (sample_data['FullBath'] >= full_bath) &
+    (sample_data['BedroomAbvGr'] >= bedroom) &
+    ((sample_data['KitchenQual'] >= kitchen_qual) if kitchen_qual != "Any" else True) &
+    ((sample_data['Fence'] != "None") if fence else True) &
+    (sample_data['Fireplaces'] >= fireplace)
+]
+
+filtered_data
 ```
 
-## Row {height="30%"}    <!-- heigth 70% 차지하여 출력, 두개니까 두개가 가로 길이를 나누어 출력됨 -->
+## Row {height="30%"}
 
 ```{python}
-b = 1
-print(b)
+importance_df = pd.DataFrame({
+    'Feature': ['FullBath', 'BedroomAbvGr', 'KitchenQual', 'Fence', 'Fireplaces'],
+    'Importance': [0.35, 0.25, 0.20, 0.15, 0.10]
+})
+fig_importance = px.bar(importance_df, x='Importance', y='Feature', orientation='h', title='옵션별 중요도')
+fig_importance
 ```
 
-```{python}
-c = 1
-print(c)
-```
-
-<!--   orientation: columns 설정을 포멧에 해야함
-## Column {width=60%}    
-
-```{python}
-a = 1
-print(a)
-```
-
-## Cloumn {width=40%}
-
-```{python}
-b = 1
-print(b)
-```
-
-```{python}
-c = 1
-print(c)
-```
-
- -->
 
 
-## Row {height=40% .tabset}
+# 🗺️ Leaflet.js + Zoom 필터링 예시
 
-### Tab 1
+<iframe src="filter_map.html" width="100%" height="600px"></iframe>
 
-### Tab 2
 
-# 페이지 2
+# 🗺️ Neighborhood Polygon + Marker Cluster 예시
+
+<iframe src="neighborhood_map.html" width="100%" height="600px"></iframe>

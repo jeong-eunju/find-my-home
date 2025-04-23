@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Neighborhood Polygon Filtering Example</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <style>
+    #map { height: 600px; }
+  </style>
+</head>
+<body>
+<h3>Neighborhood Polygon Filtering Example (Marker Cluster + Polygon)</h3>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+// ✅ 지도 생성 먼저!
+const map = L.map('map').setView([42.03, -93.62], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// ✅ Neighborhood Polygon (폴리곤 정의는 그 다음!)
+const neighborhoodPolygon = L.polygon([
+  [42.06, -93.65],
+  [42.06, -93.58],
+  [42.01, -93.58],
+  [42.01, -93.65]
+], {color: 'blue'}).addTo(map);
+
+// ✅ 샘플 데이터 (위도, 경도, 주소)
+const data = [
+  {lat: 42.03, lon: -93.62, addr: "123 A St"},
+  {lat: 42.04, lon: -93.60, addr: "456 B St"},
+  {lat: 42.02, lon: -93.63, addr: "789 C St"},
+  {lat: 42.05, lon: -93.61, addr: "101 D St"},
+  {lat: 42.01, lon: -93.64, addr: "202 E St"}
+];
+
+// ✅ Marker Cluster
+const markers = L.markerClusterGroup();
+
+// ✅ 필터링 함수
+function filterPoints() {
+  markers.clearLayers();
+  data.forEach(point => {
+    const latlng = L.latLng(point.lat, point.lon);
+    if (neighborhoodPolygon.getBounds().contains(latlng)) {
+      const marker = L.marker(latlng).bindPopup(point.addr);
+      markers.addLayer(marker);
+    }
+  });
+}
+
+// ✅ 처음 실행
+filterPoints();
+map.addLayer(markers);
+
+// ✅ zoom / pan 할 때 필터링 다시 실행
+map.on('moveend', filterPoints);
+</script>
+</body>
+</html>
