@@ -92,9 +92,13 @@ lasso_cv.alpha_     # 아래 계산한 것들 평균내서 최적의 람다값 �
 lasso_cv.mse_path_
 lasso_cv.coef_
 
-# 절대값 기준 정렬된 인덱스
-sorted_idx = np.sort(np.abs(lasso_cv.coef_))[::-1]
+# 1. 수치형 + 범주형 컬럼 이름 뽑기
+num_feature_names = num_columns.tolist()
+cat_feature_names = onehot.get_feature_names_out(cat_columns).tolist()
+all_feature_names = num_feature_names + cat_feature_names
 
-# 계수 값과 인덱스 함께 보기
-for i in sorted_idx:
-    print(f"Index: {i}, Coef: {lasso_cv.coef_[i]:.4f}, |Coef|: {abs(lasso_cv.coef_[i]):.4f}")
+# 2. 중요도 추출
+importance = pd.Series(lasso_cv.coef_, index=all_feature_names)
+importance = importance[importance != 0].sort_values(key=abs, ascending=False)
+
+importance
