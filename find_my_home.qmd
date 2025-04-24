@@ -45,8 +45,8 @@ editor: visual
 
 ## 🏷️ 주요 변수 설명
 
-| 변수명         | 설명                           | 타입          |
-|----------------|--------------------------------|---------------|
+| 변수명       | 설명                           | 타입          |
+|--------------|--------------------------------|---------------|
 | SalePrice    | 판매 가격                      | 수치형        |
 | GrLivArea    | 지상 거주 면적 (sqft)          | 수치형        |
 | OverallQual  | 전반적인 건축 품질 (1\~10)     | 범주형/수치형 |
@@ -61,20 +61,13 @@ editor: visual
 
 > **“이 변수들이 과연 집값에 얼마나 영향을 줄까?”**
 
-{python}
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+{python} import pandas as pd import seaborn as sns import matplotlib.pyplot as plt
 
 df = pd.read_excel('ames_df.xlsx')
 
 # 주요 변수들 간 상관관계 히트맵 (예시 코드)
-plt.figure(figsize=(8,6))
-sns.heatmap(df[['SalePrice', 'OverallQual', 'FullBath', 'GarageCars']].corr(), 
-            annot=True, cmap='coolwarm')
-plt.title('🏘️ 주요 변수와 집값의 상관관계')
-plt.show()
 
+plt.figure(figsize=(8,6)) sns.heatmap(df\[\['SalePrice', 'OverallQual', 'FullBath', 'GarageCars'\]\].corr(), annot=True, cmap='coolwarm') plt.title('🏘️ 주요 변수와 집값의 상관관계') plt.show()
 
 # 🏠 데이터 전처리
 
@@ -100,14 +93,18 @@ plt.show()
 
 ## 📍 Ames Housing Map
 
+<iframe src="map.html" width="100%" height="600px" style="border:none;">
 
-<iframe src="map.html" width="100%" height="600px" style="border:none;"></iframe>
+</iframe>
 
----
+------------------------------------------------------------------------
 
-<iframe src="map_filtered.html" width="100%" height="600px" style="border:none;"></iframe>
+<iframe src="map_filtered.html" width="100%" height="600px" style="border:none;">
 
+</iframe>
 
----
+------------------------------------------------------------------------
 
-<iframe src="map_filtered_with_special.html" width="100%" height="600px" style="border:none;"></iframe>
+<iframe src="map_filtered_with_special.html" width="100%" height="600px" style="border:none;">
+
+</iframe>
