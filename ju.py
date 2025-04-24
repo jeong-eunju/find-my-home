@@ -63,7 +63,7 @@ cols_to_drop = [
     'ExterQual_Score', 'ExterCond_Score',
     'BsmtQual_Score', 'BsmtCond_Score',
     'GarageQual_Score', 'GarageCond_Score', 
-    'Latitude', 'Longitude'
+    'Latitude', 'Longitude','HeatingQC'
 ]
 
 df = df.drop(columns=cols_to_drop)
@@ -197,6 +197,7 @@ best_price, best_condition = find_best_home_within_budget(
 best_price, best_condition
 
 
+
 # 진짜 내가 원하는 옵션을 고정하고 예산 안에서 가장 좋은 조합을 추천한다면? 
 # 고정 조건 포함 함수 다시 정의
 def find_best_with_constraints(df, model, scaler, encoder, num_cols, cat_cols, budget, fixed_conditions):
@@ -238,14 +239,14 @@ def find_best_with_constraints(df, model, scaler, encoder, num_cols, cat_cols, b
 best_price_fixed, best_condition_fixed = find_best_with_constraints(
     df=df,
     model=lasso_cv,
-    scaler=scaler,
-    encoder=encoder,
+    scaler=std_scaler,
+    encoder=onehot,
     num_cols=num_columns,
     cat_cols=cat_columns,
     budget=200000,
     fixed_conditions={
-        'GarageCars': 2,
-        'HeatingQC': 'Gd'
+        'Neighborhood': 'Greens',
+        'Foundation' : 'Slab'
     }
 )
 best_price_fixed, best_condition_fixed
