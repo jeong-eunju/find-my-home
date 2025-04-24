@@ -246,7 +246,6 @@ best_price_fixed, best_condition_fixed = find_best_with_constraints(
     budget=200000,
     fixed_conditions={
         'Neighborhood': 'Greens',
-        'Foundation' : 'Slab'
     }
 )
 best_price_fixed, best_condition_fixed
