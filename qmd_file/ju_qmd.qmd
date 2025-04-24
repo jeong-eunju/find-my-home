@@ -1,29 +1,24 @@
 ---
-title: "**사고 싶었던 집, 모델이 말해준 진실** "
+title: "**사고 싶었던 집, 모델이 말해준 진실**"
 author: "7조"
-format: 
+format:
   dashboard:
     theme: Simplex
-    scrolling: True
-    # logo: "img/teletobi.jpg"
-    # css: style.css
-    html:
-    includes:
-    #   in_header: path/to/font-awesome.css        
-                     
+    scrolling: true
 ---
+
 
 <style>
 .navbar {
     background: linear-gradient(to right,rgb(190, 224, 231), #FFF9C4,rgb(205, 255, 249), #C8E6C9);
 }
-
 .navbar .active {
-    background:rgb(206, 225, 239) !important; /* 연한 베이지로 변경 및 우선 적용 */
+    background:rgb(206, 225, 239) !important;
 }
-
+body {
+  font-size: 18px;  /* 원하는 크기로 수정 */
+}
 </style>
-
 
 # 🏚️ 프로젝트 소개
 
@@ -34,46 +29,33 @@ format:
 :::
 
 ::: {.column width="70%"}
-
-<br>
-<br>
-
 💬 **왜 이 프로젝트를 시작했을까?**
-
-<br>
 
 - 내 예산 13만 달러... 대출까지 **20만 달러** 마련!!
 - 이 돈으로 살 수 있는 **최적의 옵션**은 뭘까?
-- 내가 **원하는 옵션**을 선택했을 때, **예산 안에서 이사할 수 있는 집**은 어디가 있을까?
-
+- 내가 원하는 옵션을 선택했을 때, **예산 안에서 이사할 수 있는 집**은 어디가 있을까?
 :::
 
 :::
 
-**🏷️선택된 주요 변수 정리**
-<style>
-  tbody tr {
-    border-bottom: 1px solid #e0e0e0;
-  }
-</style>
-<div style="overflow-x: auto; max-height: 550px; border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
+---
+
+## 🏷️ 선택된 주요 변수 정리
+
+<!-- 반드시 ::: 블록 바깥에서 div 사용 -->
+<div style="overflow-x: auto; max-height: 500px; border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
 
 <table style="width:100%; table-layout: fixed; border-collapse: collapse;">
-  <colgroup>
-    <col style="width: 20%;">
-    <col style="width: 20%;">
-    <col style="width: 60%;">
-  </colgroup>
   <thead style="background-color: #f5f5f5;">
     <tr>
-      <th>변수명</th>
-      <th>한글 해석</th>
-      <th>설명</th>
+      <th style="width:20%;">변수명</th>
+      <th style="width:20%;">한글 해석</th>
+      <th style="width:60%;">설명</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td><code>SalePrice</code></td><td>판매 가격</td><td>실제 거래된 주택 가격 (<strong>목표 변수 y</strong>)</td></tr>
-    <tr><td><code>MSZoning</code></td><td>용도 지역</td><td>주택이 속한 구역의 용도 분류 (주거, 상업 등)<br><span style="color:red;">주거지역만 사용 (RH, RL, RM)</strong></td></tr>
+    <tr><td><code>SalePrice</code></td><td>판매 가격</td><td>실제 거래된 주택 가격 (목표 변수 y)</td></tr>
+    <tr><td><code>MSZoning</code></td><td>용도 지역</td><td>주택이 속한 구역의 용도 분류 (주거, 상업 등)<br><span style="color:red;">주거지역만 사용 (RH, RL, RM)</span></td></tr>
     <tr><td><code>LotArea</code></td><td>대지 면적</td><td>토지 면적 (제곱피트 단위)</td></tr>
     <tr><td><code>Utilities</code></td><td>사용 가능 시설</td><td>전기, 수도, 가스 등의 이용 가능 여부<br><span style="color:red;">Allpub 제외 삭제</span></td></tr>
     <tr><td><code>Neighborhood</code></td><td>이웃 지역</td><td>Ames 시의 물리적 구역 구분</td></tr>
@@ -106,4 +88,768 @@ format:
 </table>
 
 </div>
+
+---
+
+
+# 🧹 데이터 전처리
+
+```{python}
+
+#|eval: true
+#|echo: false
+#|results: hide
+
+import numpy as np
+import pandas as pd
+pd.set_option('display.max_rows', None)
+df = pd.read_excel('../ames_df.xlsx')
+
+```
+
+
+## 1️⃣ 품질 변수 수정하기
+
+<span style="font-size:20px; font-weight:bold;">1️⃣ 품질 변수 전처리</span>
+<br>
+
+**⭐ 수치형·범주형, Qual/Cond로 나뉜 품질 변수를 수치형으로 통일해, 가중평균으로 새로운 파생변수 생성**
+
+<br>
+
+::: {.panel-tabset}
+
+### 🗒️ 범주형 변수 → 수치형으로
+
+<br>
+
+- **대상 변수**
+  - 외부자재: `ExterQual`, `ExterCond`  
+  - 지하실: `BsmtQual`, `BsmtCond`  
+  - 난방: `HeatingQC`  
+  - 차고: `GarageQual`, `GarageCond`
+
+<br>
+
+- **변환 기준**
+<table style="width:100%; text-align:left; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th style="padding:12px;">등급 코드</th>
+      <th style="padding:12px;">의미</th>
+      <th style="padding:12px;">처리 점수</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Ex</td><td>Excellent (최상)</td><td>5</td></tr>
+    <tr><td>Gd</td><td>Good (상)</td><td>4</td></tr>
+    <tr><td>TA</td><td>Typical/Average (중)</td><td>3</td></tr>
+    <tr><td>Fa</td><td>Fair (하)</td><td>2</td></tr>
+    <tr><td>Po</td><td>Poor (최하)</td><td>1</td></tr>
+    <tr><td>None, nan, 0</td><td>해당 없음</td><td>0</td></tr>
+  </tbody>
+</table>
+
+
+```{python}
+#| echo: true
+qual_map_543210 = {
+    'Ex': 5, 'Gd': 4, 'TA': 3, 'Fa': 2, 'Po': 1,
+    'None': 0, 'nan': 0, '0': 0
+}
+
+qual_vars = [
+    "ExterQual", "ExterCond",
+    "BsmtQual", "BsmtCond",
+    "HeatingQC",
+    "GarageQual", "GarageCond"
+]
+
+for col in qual_vars:
+    df[col] = df[col].astype(str).replace(['nan', 'NaN', '0'], 'None')
+    df[col + "_Score"] = df[col].map(qual_map_543210)
+```
+
+
+### 👁️ 가중치 설정
+
+<br>
+
+**품질 변수가 Qual, Cond로 나누어져있는 경우 가중평균으로 하나의 품질변수로 통합**
+
+<br>
+
+- `Qual`, `Cond` 변수와 `SalePrice` 상관관계 확인
+
+```{python}
+#| echo: True
+#| eval: false
+df[["SalePrice", "OverallQual", "OverallCond"]].corr()
+df[["SalePrice", "ExterQual_Score", "ExterCond_Score"]].corr()
+df[["SalePrice", "GarageQual_Score", "GarageCond_Score"]].corr()
+df[["SalePrice", "BsmtQual_Score", "BsmtCond_Score"]].corr()
+```
+
+```{python}
+
+#| echo: false
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 한글 폰트 설정 (Windows 기준)
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+# 2x2 히트맵을 위한 변수 쌍
+heatmap_info = [
+    (['SalePrice', 'OverallQual', 'OverallCond'], "Overall 품질"),
+    (['SalePrice', 'ExterQual_Score', 'ExterCond_Score'], "외부자재 품질"),
+    (['SalePrice', 'GarageQual_Score', 'GarageCond_Score'], "차고 품질"),
+    (['SalePrice', 'BsmtQual_Score', 'BsmtCond_Score'], "지하실 품질"),
+]
+
+# 시각화
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+for i, (cols, title) in enumerate(heatmap_info):
+    row, col = divmod(i, 2)
+    ax = axes[row, col]
+    corr = df[cols].corr()
+    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", ax=ax, cbar=False)
+    _ = ax.set_title(f"{title} vs 집값")  # Text 출력 방지
+
+
+plt.tight_layout()
+plt.show()
+```
+
+<br>
+
+- **✔️ 상관관계 결과 확인 및 가중치 설정**
+
+| 새로운 파생변수 | 기존 변수                   | 집값과의 상관계수 | 가중치 |
+|----------------|-----------------------------|--------------------|------------------|
+| Overall        | OverallQual / OverallCond   | 0.79 / -0.11       | 7 : 3            |
+| Exter          | ExterQual / ExterCond       | 0.68 / 0.01        | 9 : 1            |
+| Garage         | GarageQual / GarageCond     | 0.26 / 0.24        | 7 : 3            |
+| Bsmt           | BsmtQual / BsmtCond         | 0.58 / 0.20        | 7 : 3            |
+
+
+### 😮 파생변수 생성 (가중평균)
+
+<br>
+
+**가중치 반영한 파생변수 생성 후 기존의 `Qual`, `Cond` 변수 삭제**
+
+<br>
+
+```{python}
+#| echo: True
+df['Overall'] = df['OverallQual'] * 0.7 + df['OverallCond'] * 0.3
+df['Exter'] = df['ExterQual_Score'] * 0.9 + df['ExterCond_Score'] * 0.1
+df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
+df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
+
+cols_to_drop = [
+    'OverallQual', 'OverallCond',
+    'ExterQual', 'ExterCond',
+    'BsmtQual', 'BsmtCond',
+    'GarageQual', 'GarageCond',
+    'ExterQual_Score', 'ExterCond_Score',
+    'BsmtQual_Score', 'BsmtCond_Score',
+    'GarageQual_Score', 'GarageCond_Score', 
+    'Latitude', 'Longitude','HeatingQC'
+]
+
+df = df.drop(columns=cols_to_drop)
+
+```
+
+<br>
+
+- 품질 관련 파생변수 확인 `.head(5)`
+```{python}
+#| echo: False
+df[['Overall', 'Exter', 'Garage', 'Bsmt', 'HeatingQC_Score']].head(5)
+```
+
+:::
+
+## 2️⃣ 예산 필터링
+<span style="font-size:20px; font-weight:bold;">2️⃣ 예산 필터링</span>
+<br>
+
+- 내가 가진 돈은! 💸 **13만 달러 이상, 20만 달러 이하**
+
+::: {.column-body}
+
+```{python}
+#| echo: false
+#| results: 'hide'
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 예산 조건 필터링
+filtered = df[(df['SalePrice'] >= 130000) & (df['SalePrice'] <= 200000)]
+
+# bin 설정
+bins = np.histogram_bin_edges(df['SalePrice'], bins=30)
+
+# 시각화
+fig, ax = plt.subplots(figsize=(10, 6))
+_ = ax.hist(df['SalePrice'], bins=bins, color='lightgray', edgecolor='black', label='전체 분포')
+_ = ax.hist(filtered['SalePrice'], bins=bins, color='skyblue', edgecolor='black', label='예산 내 분포')
+
+ax.set_title('집값 분포 (예산 필터링)')
+ax.set_xlabel('SalePrice')
+ax.set_ylabel('건수')
+ax.legend()
+plt.tight_layout()
+
+# 이 줄 주의: 반환 없이 명시적으로 출력만 함
+plt.show()
+```
+
+
+
+<iframe src="map1.html" width="100%" height="500px" style="border:none;"></iframe>
+
+```{python}
+#| echo: False
+# 실제 df 필터링 적용
+df = df[df['SalePrice'] >= 130000]
+df = df[df['SalePrice'] <= 200000]
+```
+:::
+
+
+## 3️⃣ 회귀분석을 위한 데이터 전처리
+<span style="font-size:20px; font-weight:bold;">3️⃣ 회귀분석을 위한 데이터 전처리</span>
+<br>
+
+::: {.column-body}
+
+- 종속 변수 y 분리: `SalePrice`  
+- 독립변수 X: 수치형 + 범주형 분리  
+  - 수치형: `StandardScaler()` 적용  
+  - 범주형: `OneHotEncoder()` 적용  
+- 수치형 + 범주형 데이터 합치기  
+
+```{python}
+#| echo: true
+#| results: 'hide'
+
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+import numpy as np
+
+X = df.drop(columns='SalePrice')
+y = df['SalePrice']
+
+num_columns = X.select_dtypes(include=['number']).columns
+cat_columns = X.select_dtypes(include=['object']).columns
+
+onehot = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+X_train_cat = onehot.fit_transform(X[cat_columns])
+
+scaler = StandardScaler()
+X_train_num = scaler.fit_transform(X[num_columns])
+
+X_train_all = np.concatenate([X_train_num, X_train_cat], axis=1)
+```
+
+:::
+
+
+# 🏡 분석과정
+
+:::{.column-page}
+
+## 🔍 분석 배경
+
+우리는 예산 내에서 **어떤 조건이 집값을 높이는 데 크게 기여하는지** 파악하고자  
+수업시간에 배운 `LassoCV` 모델을 활용하여 분석을 진행했습니다.
+
+::: callout-note
+### 📌 Lasso 회귀란?
+
+- 중요도가 낮은 변수의 계수를 자동으로 **0으로 만들고**
+- 중요한 변수는 **살아남게** 하는 회귀 기법입니다.
+- 해석이 쉽고, **과적합 방지**에 효과적입니다.
+:::
+
+::: callout-note
+### 🧠 LassoCV 회귀란?
+
+- `LassoCV`는 Lasso 회귀에서 **최적의 정규화 강도(alpha)** 를 **교차검증으로 자동 선택**합니다.
+- 여러 alpha 후보 중 가장 성능이 좋은 것을 **데이터 기반으로 선택**합니다.
+- 결과적으로 **예측 성능 + 해석력** 모두 확보할 수 있습니다.
+:::
+
+---
+
+## 🧪 분석 목표
+
+- **내 예산 안에서는 어떤 집이 최고의 집일까?**
+- **변수 중요도**를 계수로 시각화
+- **예측 가격이 가장 높은 조합** 도출
+
+:::
+
+:::{.column-page}
+
+```{python}
+import numpy as np
+import pandas as pd
+df = pd.read_excel('../ames_df.xlsx')
+
+# 전처리###############################################################
+# 수치형 변수 qual, cond 가중치줘서 새로운 열 추가
+# 가중치 주기 위해 상관계수 분석
+# df[['SalePrice', 'OverallQual', 'OverallCond']].corr()  ## Qual이 상관계수 높게 나와 Qual가중치를 7로 줌
+
+# Overall 점수 계산 (OverallQual 70%, OverallCond 30%)
+df['Overall'] = df['OverallQual'] * 0.7 + df['OverallCond'] * 0.3
+
+```
+
+```{python}
+#| echo: False
+#| eval: True
+#| results : hide
+#| warning: false
+#| message: false
+
+# 범주형 변수 qual, cond 가중치줘서 새로운 열 추가
+# 점수화 기준 (543210 스케일)
+qual_map_543210 = {
+    'Ex': 5,
+    'Gd': 4,
+    'TA': 3,
+    'Fa': 2,
+    'Po': 1,
+    'None': 0,
+    'nan': 0,
+    '0': 0
+}
+
+# 대상 변수
+qual_vars = [
+    "ExterQual", "ExterCond",
+    "BsmtQual", "BsmtCond",
+    "HeatingQC",
+    "GarageQual", "GarageCond"
+]
+
+
+
+for col in qual_vars:
+    df[col] = df[col].astype(str).replace(['nan', 'NaN', '0'], 'None')  # 예외처리 강화
+    df[col + "_Score"] = df[col].map(qual_map_543210)
+
+
+# 범주형 데이터 가중치 열 추가
+df['Exter'] = df['ExterQual_Score'] * 0.9 + df['ExterCond_Score'] * 0.1
+df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
+df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
+
+
+cols_to_drop = [
+    'OverallQual', 'OverallCond',
+    'ExterQual', 'ExterCond',
+    'BsmtQual', 'BsmtCond',
+    'GarageQual', 'GarageCond',
+    'ExterQual_Score', 'ExterCond_Score',
+    'BsmtQual_Score', 'BsmtCond_Score',
+    'GarageQual_Score', 'GarageCond_Score', 
+    'Latitude', 'Longitude','HeatingQC'
+]
+
+df = df.drop(columns=cols_to_drop)
+
+
+# 예산 필터링
+df = df[df['SalePrice'] >= 130000]
+df = df[df['SalePrice'] <= 200000]
+
+# x, y 분리! 
+X = df.drop(columns='SalePrice')
+y = (df['SalePrice'])
+
+# X -> 수치형, 범주형 분리
+num_columns = X.select_dtypes(include=['number']).columns
+cat_columns = X.select_dtypes(include=['object']).columns
+
+# 범주형은 원핫, 수치형은 스케일링 
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+onehot = OneHotEncoder(handle_unknown='ignore', 
+                       sparse_output=False)
+X_train_cat = onehot.fit_transform(X[cat_columns])
+
+std_scaler = StandardScaler()
+X_train_num = std_scaler.fit_transform(X[num_columns])
+
+X_train_all = np.concatenate([X_train_num, X_train_cat], axis = 1)
+
+
+# LassoCV -> 가격에 많은 영향을 미치는 변수 찾기
+from sklearn.linear_model import LassoCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+
+alpha = np.linspace(0, 0.5, 1000)
+lasso_cv = LassoCV(alphas=alpha,
+                   cv=5,
+                   max_iter=1000)
+_=lasso_cv.fit(X_train_all, y)
+_ = 0  # 자동 출력 방지용 (마지막 줄이 객체가 아니게 함)
+
+# 1. 원핫 범주형 변수 이름 뽑기
+cat_feature_names = onehot.get_feature_names_out(cat_columns)
+
+# 2. 전체 변수 이름 (수치형 + 범주형)
+feature_names = np.concatenate([num_columns, cat_feature_names])
+
+# 3. LassoCV에서 나온 계수와 변수이름 매칭
+lasso_coef = lasso_cv.coef_
+
+# 4. DataFrame으로 정리 + 절대값 기준 정렬
+coef_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Coefficient': lasso_coef
+})
+coef_df['AbsCoefficient'] = coef_df['Coefficient'].abs()
+coef_df = coef_df.sort_values('AbsCoefficient', ascending=False)
+
+
+
+# 0인 값 제거
+coef_df = coef_df[coef_df['Coefficient'] != 0]
+coef_df = coef_df.sort_values('Coefficient', ascending=False)
+
+
+
+# 예시: df_sorted는 Feature, Coefficient 등이 포함된 정리된 결과 데이터프레임
+coef_df['Prefix'] = coef_df['Feature'].apply(lambda x: x.split('_')[0] if '_' in x else x)
+
+# 그룹별로 묶기 (예: 평균/합계/갯수 등 집계도 가능)
+grouped = coef_df.groupby('Prefix')
+
+# # 예시: 그룹별 Feature 개수 확인
+# print(grouped.size())
+
+# # 예시: 그룹별 Coefficient 총합 보기   
+# print(grouped['AbsCoefficient'].mean().sort_values(ascending=False))
+
+
+
+# 예산 내 최고 스펙 조합을 찾는 함수
+def find_best_home_within_budget(df, model, scaler, encoder, num_cols, cat_cols, budget):
+    """
+    예산 내에서 가장 높은 예측 집값을 가지는 조건 조합을 찾음
+
+    Parameters:
+    - df: 전처리된 원본 데이터프레임
+    - model: 훈련된 LassoCV 모델
+    - scaler: 수치형 표준화 도구
+    - encoder: 범주형 인코더
+    - num_cols: 수치형 변수 리스트
+    - cat_cols: 범주형 변수 리스트
+    - budget: 예산 상한 (ex: 200000)
+
+    Returns:
+    - 최고 예측 가격과 해당 조건
+    """
+    best_price = -np.inf
+    best_condition = None
+
+    # 예산 내 데이터만 사용
+    df_budget = df[df['SalePrice'] <= budget]
+
+    # 중복 제거된 후보 범주 조합만 추출
+    unique_combinations = df_budget[cat_cols].drop_duplicates().astype(str)
+
+    # 수치형 평균 고정
+    input_num = pd.DataFrame([df_budget[num_cols].mean()], columns=num_cols)
+    input_num_scaled = scaler.transform(input_num)
+
+    for _, row in unique_combinations.iterrows():
+        input_cat = pd.DataFrame([row], columns=cat_cols).astype(str)
+        encoded_cat = encoder.transform(input_cat)
+        X_input = np.concatenate([input_num_scaled, encoded_cat], axis=1)
+        predicted = model.predict(X_input)[0]
+
+        if predicted > best_price:
+            best_price = predicted
+            best_condition = row.to_dict()
+
+    return best_price, best_condition
+
+# 함수 실행 (예산: $200,000)
+best_price, best_condition = find_best_home_within_budget(
+    df, lasso_cv, std_scaler, onehot, num_columns, cat_columns, budget=200000
+)
+
+
+
+
+# 진짜 내가 원하는 옵션을 고정하고 예산 안에서 가장 좋은 조합을 추천한다면? 
+# 고정 조건 포함 함수 다시 정의
+def find_best_with_constraints(df, model, scaler, encoder, num_cols, cat_cols, budget, fixed_conditions):
+    best_price = -np.inf
+    best_condition = None
+
+    df_budget = df[df['SalePrice'] <= budget]
+    for key, value in fixed_conditions.items():
+        df_budget = df_budget[df_budget[key].astype(str) == str(value)]
+
+    if df_budget.empty:
+        return None, "조건을 만족하는 집이 없습니다."
+
+    unique_combinations = df_budget[cat_cols].drop_duplicates().astype(str)
+    input_num = pd.DataFrame([df_budget[num_cols].mean()], columns=num_cols)
+    for k, v in fixed_conditions.items():
+        if k in num_cols:
+            input_num[k] = v
+    input_num_scaled = scaler.transform(input_num)
+
+    for _, row in unique_combinations.iterrows():
+        input_cat = pd.DataFrame([row], columns=cat_cols).astype(str)
+        for k, v in fixed_conditions.items():
+            if k in cat_cols:
+                input_cat[k] = v
+
+        encoded_cat = encoder.transform(input_cat)
+        X_input = np.concatenate([input_num_scaled, encoded_cat], axis=1)
+        predicted = model.predict(X_input)[0]
+
+        if predicted > best_price:
+            best_price = predicted
+            best_condition = row.to_dict()
+            best_condition.update({k: v for k, v in fixed_conditions.items() if k not in row})
+
+    return best_price, best_condition
+
+# 테스트 실행
+best_price_fixed, best_condition_fixed = find_best_with_constraints(
+    df=df,
+    model=lasso_cv,
+    scaler=std_scaler,
+    encoder=onehot,
+    num_cols=num_columns,
+    cat_cols=cat_columns,
+    budget=200000,
+    fixed_conditions={
+        'Neighborhood': 'Greens',
+    }
+) 
+```
+
+:::
+
+:::{.column-page}
+
+📈 Lasso 회귀 결과: Top 20 변수
+
+```{python}
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+os.makedirs("images", exist_ok=True)
+top_n = 20
+top_coef = coef_df.head(top_n)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x="Coefficient", y="Feature", data=top_coef)
+plt.title("Top 20 Important Features by Lasso Regression")
+plt.tight_layout()
+plt.savefig("images/lasso_top20.png")
+
+```
+
+:::
+
+:::{.column-page}
+```{python}
+## 변수 그룹별 평균 영향력 (Prefix 그룹 기준)
+if 'Prefix' not in coef_df.columns:
+    coef_df['Prefix'] = coef_df['Feature'].apply(lambda x: x.split('_')[0] if '_' in x else x)
+
+group_mean = coef_df.groupby('Prefix')['AbsCoefficient'].mean().sort_values(ascending=True)
+
+plt.figure(figsize=(10, 6))
+group_mean.plot(kind='barh')
+# plt.xlabel("Mean Absolute Coefficient")
+# plt.title("Mean Feature Influence by Category (Prefix Grouping)")
+plt.tight_layout()
+plt.savefig("images/lasso_group_mean.png")
+
+```
+
+:::
+
+:::{.column-page}
+```{python}
+from IPython.display import display
+display(pd.DataFrame([best_condition]))
+print(f"✅ 모델이 예측한 최고의 집값: ${best_price:,.0f}")
+```
+
+:::
+
+:::{.column-page}
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LassoCV
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.model_selection import train_test_split
+
+# alpha 범위 설정
+alpha = np.linspace(0, 0.5, 1000)
+
+# LassoCV 훈련
+lasso_cv = LassoCV(alphas=alpha, cv=5, max_iter=1000)
+lasso_cv.fit(X_train_all, y)  # X_train_all은 전처리된 전체 입력, y는 SalePrice
+
+# 평균 MSE 계산
+mean_mse = np.mean(lasso_cv.mse_path_, axis=1)
+optimal_alpha = lasso_cv.alpha_
+
+# 시각화
+plt.figure(figsize=(10, 6))
+plt.plot(alpha, mean_mse, label='Mean CV MSE')
+plt.axvline(optimal_alpha, color='red', linestyle='--', label=f'Optimal alpha = {optimal_alpha:.4f}')
+plt.xlabel('Alpha')
+_=plt.ylabel('Mean Cross-Validated MSE')
+_=plt.title('LassoCV - Alpha vs MSE')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+```
+
+:::
+
+:::{.column-page}
+## ✅ 이 대시보드에는 포함된 것들
+
+
+| **분석 내용** | **설명** |
+|--------------|--------------------------------|
+| **Lasso 요약**             | `LassoCV` 모델은 교차검증으로 최적의 `alpha ≈ 0.5`를 선택하고, 중요하지 않은 변수는 자동으로 제거함으로써 과적합을 방지하고 해석력을 높임. |
+| **중요한 변수 Top 20**     | `Overall`, `GarageCars`, `GrLivArea`, `Exter`, `Bsmt`, `YearRemodAdd`, `Neighborhood` 등이 상위 변수로 나타남. 대부분 구조/품질 관련 변수. |
+| **변수 그룹별 영향력**     | 계수 절대값 평균 기준 영향력 상위 그룹은 `Overall`, `Garage`, `Bsmt`, `Exter`, `Neighborhood` 순. |
+| **예측된 최고의 집 조건** | `Overall`=10, `GarageCars`=3, `GrLivArea`>2000, `Exter`·`Bsmt`≥4.5, `YearRemodAdd`>2010, `Neighborhood`='NridgHt' |
+| **요약 결과**              | 예산 130,000~200,000달러 내에서 가장 효율적인 조건은 `Overall`≥7.5, `Exter`·`Garage`·`Bsmt`≥4.0, `GarageCars`≥2, `YearRemodAdd`>2005, `Neighborhood`='Gilbert', 'SawyerW' 등으로 분석됨. |
+
+:::
+
+---
+
+
+
+
+# 🏡 결론
+
+## 박스1  
+🎯 예산에 맞는 집은 많지만 모든 조건을 만족하는 집은 단 **하나**
+
+---
+
+<iframe src="map_filtered_with_special.html" width="100%" height="500px" style="border:none;"></iframe>
+
+
+
+## 박스2  
+⚠️ 만약 일부 옵션을 양보한다면?
+
+---
+
+<iframe src="relaxing_graph.html" width="100%" height="600px" style="border:none;"></iframe>
+
+
+
+
+## 🏁 최종 요약 및 인사이트 {.tabset}
+
+### 📌  프로젝트, 한눈에 정리
+
+💡 **분석 질문**
+
+- 예산 안에서 **가장 퀄리티가 좋은 집은 어떤 조합일까?**  
+- 내가 원하는 옵션을 고수하면, **집 선택지는 얼마나 좁아질까?**  
+- 조건을 일부 양보하면, **선택 폭은 얼마나 넓어질 수 있을까?**
+
+---
+
+🔎 **분석 과정 요약**
+
+1️⃣ **데이터 전처리**  
+데이터 중 qual과 condition의 상관관계에 따라 가중치를 주어 새로운 변수를 생성하고, 
+예산 범위(13만~20만 달러)에 해당하는 집만 필터링
+
+2️⃣ **회귀분석 (Lasso)**  
+가격에 영향을 주는 주요 변수를 선택해, 어떤 조건이 집값을 높이는 데 가장 중요한 역할을 하는지 확인
+
+3️⃣ **모델 예측**  
+예산 내에서 모델이 추천하는 가장 가성비 좋은 조건 조합을 도출
+
+4️⃣ **조건 완화 시나리오**  
+일부 옵션을 양보했을 때 선택 가능한 집의 수가 어떻게 변화하는지 비교
+
+
+### 💎  결과 & 인사이트
+
+
+**🎯 내 예산 안에서 '최고의 조합'**
+
+| 항목                | 조건                 |
+|---------------------|----------------------|
+| 용도 지역           | 저밀도 주거지역 (RL) |
+| 이웃 (Neighborhood) | Gilbert              |
+| 주택 유형           | 1Fam (단독주택)      |
+| 기초 구조           | Slab                 |
+| 난방 방식           | GasA                 |
+| 난방 품질           | Gd                   |
+| 중앙 냉방           | 있음 (Y)             |
+| 주거 기능성         | Typ (정상)           |
+| **예측된 집값**     | **약 185,453 달러**  |
+
+
+
+---
+
+이 프로젝트가 알려준 가장 큰 인사이트는,  
+
+1⃣ **상식적으로 중요하다고 생각했던 요소들이 실제로 가격에 얼마나 영향을 주는지를 확인해볼 수 있었다는 점.**  
+→ 모델을 통해 영향이 큰 주요 변수를 확인할 수 있었다.
+
+2⃣ **그 결과를 바탕으로 예산 안에서 가장 좋은 조건 조합을 찾는 모델을 만들 수 있었다는 점.**  
+→ 우리가 설정한 예산 안에서  
+→ 모델이 예측한 가장 '가성비 좋은' 집을 추천받을 수 있었다.
+
+3⃣ **모든 조건을 만족하는 집을 찾기는 쉽지 않다** 
+<br>
+→ 중요한 것은 '어떤 조건을 더 중요하게 볼 것인가'를 스스로 정하는 일이었다.
+
+이 분석을 통해  
+→ **내가 어떤 요소를 더 중요하게 보고, 어떤 기준으로 선택을 할 것인지 그 생각을 구체화해볼 수 있었다.**
+
+
+### 🚀  마무리 
+
+<img src="up-grade.png" alt="미래의 집 이미지" style="width:30%; display:block; margin-left:auto; margin-right:auto;"><br>
+
+> “결론적으로, 내 예산 안에서는 모든 걸 다 챙길 수는 없었습니다.  
+> 그래서 저는 LS빅데이터스쿨에서 배운 데이터 분석 스킬로  
+> 더 똑똑하게 선택하고, 더 잘 준비해서  
+> 다음엔 지하실도 '풀옵션'으로 챙기는 그날까지! 💪🔥”
+
+
+
 

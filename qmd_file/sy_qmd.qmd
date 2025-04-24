@@ -1,8 +1,8 @@
 ---
 title: "이런 집은 살아남는다! — 예산 내 최적의 집 찾기"
 format:
-  dashboard
-    # css: custom.css
+  dashboard:
+    css: custom.css
 editor: visual
 ---
 
@@ -136,7 +136,7 @@ plt.show()
 
 <br>
 
-- **✔️ 상관관계 결과 확인 및 가중치 설정**
+- *✔️ 상관관계 결과 확인 및 가중치 설정**
 
 | 새로운 파생변수 | 기존 변수                   | 집값과의 상관계수 | 가중치 |
 |----------------|-----------------------------|--------------------|------------------|
@@ -186,7 +186,7 @@ df[['Overall', 'Exter', 'Garage', 'Bsmt', 'HeatingQC_Score']].head(5)
 
 ::::
 
-## 2️⃣ 예산 필터링
+##2️⃣ 예산 필터링
 <span style="font-size:20px; font-weight:bold;">2️⃣ 예산 필터링</span>
 - 예산 필터링: 13만 달러 이상, 20만 달러 이하
 
@@ -223,7 +223,7 @@ df = df[df['SalePrice'] >= 130000]
 df = df[df['SalePrice'] <= 200000]
 ```
 
-## 3️⃣ 회귀분석을 위한 데이터 전처리
+##3️⃣ 회귀분석을 위한 데이터 전처리
 <span style="font-size:20px; font-weight:bold;">3️⃣ 회귀분석을 위한 데이터 전처리</span>
 <br>
 
