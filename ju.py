@@ -253,30 +253,8 @@ best_price_fixed, best_condition_fixed
 
 
 
-
-
-
-
-#######################################################################
-import plotly.graph_objects as go
-
-group_mean = coef_df.groupby('Prefix')['AbsCoefficient'].mean().sort_values()
-
-fig = go.Figure(go.Bar(
-    x=group_mean.values,
-    y=group_mean.index,
-    orientation='h',
-    marker=dict(color='skyblue')
-))
-fig.update_layout(
-    title="📊 변수 Prefix 그룹별 평균 영향력",
-    template='plotly_white'
-)
-fig.show()
-
-
-
-
+#시각화#######################################################################
+#  집값에 영향을 주는 Top 20 변수
 import plotly.express as px
 
 top_20 = coef_df.head(20)
@@ -289,12 +267,15 @@ fig.show()
 
 
 
+
+
+
+# 지도시각화 위해서 위도경도 살린 df 생성 후 지도시각화 실행행
 import numpy as np
 import pandas as pd
 pd.set_option('display.max_rows', None)
 df = pd.read_excel('../find-my-home/ames_df.xlsx')
 
-# 전처리###############################################################
 # 수치형 변수 qual, cond 가중치줘서 새로운 열 추가
 # 가중치 주기 위해 상관계수 분석
 df[['SalePrice', 'OverallQual', 'OverallCond']].corr()  ## Qual이 상관계수 높게 나와 Qual가중치를 7로 줌
@@ -346,7 +327,7 @@ df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
 df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
 
 
-cols_to_drop = [
+cols_to_drop1 = [
     'OverallQual', 'OverallCond',
     'ExterQual', 'ExterCond',
     'BsmtQual', 'BsmtCond',
@@ -357,94 +338,7 @@ cols_to_drop = [
     'HeatingQC'
 ]
 
-df = df.drop(columns=cols_to_drop)
-
-
-# 함수 실행
-best_price_fixed, best_condition_fixed = find_best_with_constraints(
-    df=df,
-    model=lasso_cv,
-    scaler=std_scaler,
-    encoder=onehot,
-    num_cols=num_columns,
-    cat_cols=cat_columns,
-    budget=200000,
-    fixed_conditions={
-        'Neighborhood': 'Greens',
-        'BldgType': '1Fam'
-    }
-)
-import pandas as pd
-import plotly.express as px
-
-if isinstance(best_condition_fixed, dict):
-
-    # 예산 내 필터
-    filtered_df = df[df['SalePrice'] <= 200000].copy()
-
-    # 하이라이트 집만 추출
-    highlight_df = filtered_df.copy()
-    for k, v in best_condition_fixed.items():
-        highlight_df = highlight_df[highlight_df[k].astype(str) == str(v)]
-
-    filtered_df['highlight'] = '일반 집'
-    highlight_df['highlight'] = '✅ 최적 조합'
-    viz_df = pd.concat([filtered_df, highlight_df], ignore_index=True)
-
-    # ====== ✅ Ames 시 중심 좌표로 강제 설정 ======
-    center_lat = 42.0308
-    center_lon = -93.6319
-
-    fig = px.scatter_mapbox(
-        viz_df,
-        lat="Latitude",
-        lon="Longitude",
-        color="highlight",
-        hover_name="Neighborhood",
-        hover_data=["SalePrice", "Overall", "Garage", "Bsmt"],
-        zoom=11,
-        height=600,
-        color_discrete_map={"✅ 최적 조합": "crimson", "일반 집": "lightgray"},
-    )
-
-    fig.update_layout(
-        mapbox_style="carto-positron",
-        mapbox_center={"lat": center_lat, "lon": center_lon},
-        title="📍 예산 내 최적 조건 조합 지도 시각화",
-        margin={"r":0,"t":40,"l":0,"b":0}
-    )
-
-    fig.show()
-
-else:
-    print("❌ 조건에 해당하는 집이 없습니다.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# interactivity for Quarto dashboard
-# requirements: pip install ipywidgets plotly pandas scikit-learn
+df1 = df.drop(columns=cols_to_drop1)
 
 import pandas as pd
 import plotly.express as px
