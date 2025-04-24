@@ -246,6 +246,272 @@ best_price_fixed, best_condition_fixed = find_best_with_constraints(
     budget=200000,
     fixed_conditions={
         'Neighborhood': 'Greens',
+        'BldgType': '1Fam'
     }
 )
 best_price_fixed, best_condition_fixed
+
+
+
+
+
+
+
+#######################################################################
+import plotly.graph_objects as go
+
+group_mean = coef_df.groupby('Prefix')['AbsCoefficient'].mean().sort_values()
+
+fig = go.Figure(go.Bar(
+    x=group_mean.values,
+    y=group_mean.index,
+    orientation='h',
+    marker=dict(color='skyblue')
+))
+fig.update_layout(
+    title="📊 변수 Prefix 그룹별 평균 영향력",
+    template='plotly_white'
+)
+fig.show()
+
+
+
+
+import plotly.express as px
+
+top_20 = coef_df.head(20)
+fig = px.bar(top_20.sort_values('Coefficient'), 
+             x='Coefficient', y='Feature', 
+             orientation='h', title='🏆 집값에 영향을 주는 Top 20 변수',
+             labels={'Coefficient':'계수', 'Feature':'변수'})
+fig.update_layout(yaxis=dict(tickfont=dict(size=12)), height=600)
+fig.show()
+
+
+
+import numpy as np
+import pandas as pd
+pd.set_option('display.max_rows', None)
+df = pd.read_excel('../find-my-home/ames_df.xlsx')
+
+# 전처리###############################################################
+# 수치형 변수 qual, cond 가중치줘서 새로운 열 추가
+# 가중치 주기 위해 상관계수 분석
+df[['SalePrice', 'OverallQual', 'OverallCond']].corr()  ## Qual이 상관계수 높게 나와 Qual가중치를 7로 줌
+
+# Overall 점수 계산 (OverallQual 70%, OverallCond 30%)
+df['Overall'] = df['OverallQual'] * 0.7 + df['OverallCond'] * 0.3
+df
+
+
+# 범주형 변수 qual, cond 가중치줘서 새로운 열 추가
+# 점수화 기준 (543210 스케일)
+qual_map_543210 = {
+    'Ex': 5,
+    'Gd': 4,
+    'TA': 3,
+    'Fa': 2,
+    'Po': 1,
+    'None': 0,
+    'nan': 0,
+    '0': 0
+}
+
+# 대상 변수
+qual_vars = [
+    "ExterQual", "ExterCond",
+    "BsmtQual", "BsmtCond",
+    "HeatingQC",
+    "GarageQual", "GarageCond"
+]
+
+
+
+for col in qual_vars:
+    df[col] = df[col].astype(str).replace(['nan', 'NaN', '0'], 'None')  # 예외처리 강화
+    df[col + "_Score"] = df[col].map(qual_map_543210)
+
+# 결과 일부 확인
+df[[col + "_Score" for col in qual_vars]]
+
+# 퀄리티 상관관계 확인
+df[["SalePrice", "OverallQual", "OverallCond"]].corr()
+df[["SalePrice", "ExterQual_Score", "ExterCond_Score"]].corr()
+df[["SalePrice", "GarageQual_Score", "GarageCond_Score"]].corr()
+df[["SalePrice", "BsmtQual_Score", "BsmtCond_Score"]].corr()
+
+# 범주형 데이터 가중치 열 추가
+df['Exter'] = df['ExterQual_Score'] * 0.9 + df['ExterCond_Score'] * 0.1
+df['Garage'] = df['GarageQual_Score'] * 0.7 + df['GarageCond_Score'] * 0.3
+df["Bsmt"] = df["BsmtQual_Score"] * 0.7 + df["BsmtCond_Score"] * 0.3
+
+
+cols_to_drop = [
+    'OverallQual', 'OverallCond',
+    'ExterQual', 'ExterCond',
+    'BsmtQual', 'BsmtCond',
+    'GarageQual', 'GarageCond',
+    'ExterQual_Score', 'ExterCond_Score',
+    'BsmtQual_Score', 'BsmtCond_Score',
+    'GarageQual_Score', 'GarageCond_Score', 
+    'HeatingQC'
+]
+
+df = df.drop(columns=cols_to_drop)
+
+
+# 함수 실행
+best_price_fixed, best_condition_fixed = find_best_with_constraints(
+    df=df,
+    model=lasso_cv,
+    scaler=std_scaler,
+    encoder=onehot,
+    num_cols=num_columns,
+    cat_cols=cat_columns,
+    budget=200000,
+    fixed_conditions={
+        'Neighborhood': 'Greens',
+        'BldgType': '1Fam'
+    }
+)
+import pandas as pd
+import plotly.express as px
+
+if isinstance(best_condition_fixed, dict):
+
+    # 예산 내 필터
+    filtered_df = df[df['SalePrice'] <= 200000].copy()
+
+    # 하이라이트 집만 추출
+    highlight_df = filtered_df.copy()
+    for k, v in best_condition_fixed.items():
+        highlight_df = highlight_df[highlight_df[k].astype(str) == str(v)]
+
+    filtered_df['highlight'] = '일반 집'
+    highlight_df['highlight'] = '✅ 최적 조합'
+    viz_df = pd.concat([filtered_df, highlight_df], ignore_index=True)
+
+    # ====== ✅ Ames 시 중심 좌표로 강제 설정 ======
+    center_lat = 42.0308
+    center_lon = -93.6319
+
+    fig = px.scatter_mapbox(
+        viz_df,
+        lat="Latitude",
+        lon="Longitude",
+        color="highlight",
+        hover_name="Neighborhood",
+        hover_data=["SalePrice", "Overall", "Garage", "Bsmt"],
+        zoom=11,
+        height=600,
+        color_discrete_map={"✅ 최적 조합": "crimson", "일반 집": "lightgray"},
+    )
+
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        mapbox_center={"lat": center_lat, "lon": center_lon},
+        title="📍 예산 내 최적 조건 조합 지도 시각화",
+        margin={"r":0,"t":40,"l":0,"b":0}
+    )
+
+    fig.show()
+
+else:
+    print("❌ 조건에 해당하는 집이 없습니다.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# interactivity for Quarto dashboard
+# requirements: pip install ipywidgets plotly pandas scikit-learn
+
+import pandas as pd
+import plotly.express as px
+import ipywidgets as widgets
+from IPython.display import display
+
+# 1. 드롭다운 위젯 만들기 (사용자가 원하는 옵션을 선택)
+neighborhood_options = sorted(df['Neighborhood'].dropna().unique())
+bldgtype_options = sorted(df['BldgType'].dropna().unique())
+
+neighborhood_dropdown = widgets.Dropdown(
+    options=neighborhood_options,
+    description='지역:',
+    value='Gilbert'
+)
+
+bldgtype_dropdown = widgets.Dropdown(
+    options=bldgtype_options,
+    description='주택유형:',
+    value='1Fam'
+)
+
+# 2. 조건 고정 + 지도 업데이트 함수
+def update_map(neighborhood, bldgtype):
+    best_price_fixed, best_condition_fixed = find_best_with_constraints(
+        df=df,
+        model=lasso_cv,
+        scaler=std_scaler,
+        encoder=onehot,
+        num_cols=num_columns,
+        cat_cols=cat_columns,
+        budget=200000,
+        fixed_conditions={
+            'Neighborhood': neighborhood,
+            'BldgType': bldgtype
+        }
+    )
+
+    if not isinstance(best_condition_fixed, dict):
+        print("❌ 조건에 맞는 집이 없습니다.")
+        return
+
+    filtered_df = df[df['SalePrice'] <= 200000].copy()
+    highlight_df = filtered_df.copy()
+    for k, v in best_condition_fixed.items():
+        highlight_df = highlight_df[highlight_df[k].astype(str) == str(v)]
+
+    filtered_df['highlight'] = '일반 집'
+    highlight_df['highlight'] = '✅ 최적 조합'
+    viz_df = pd.concat([filtered_df, highlight_df], ignore_index=True)
+
+    fig = px.scatter_mapbox(
+        viz_df,
+        lat="Latitude",
+        lon="Longitude",
+        color="highlight",
+        hover_name="Neighborhood",
+        hover_data=["SalePrice", "Overall", "Garage", "Bsmt"],
+        zoom=11,
+        height=600,
+        color_discrete_map={"✅ 최적 조합": "crimson", "일반 집": "lightgray"},
+        center={"lat": 42.0308, "lon": -93.6319},
+        title=f"📍 조건 ({neighborhood}, {bldgtype}) 기반 최적 조합"
+    )
+
+    fig.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":40,"l":0,"b":0})
+    fig.show()
+
+# 3. 연결: 상호작용 이벤트 바인딩
+widgets.interact(update_map, neighborhood=neighborhood_dropdown, bldgtype=bldgtype_dropdown)

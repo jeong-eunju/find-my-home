@@ -30,10 +30,12 @@ body {
 
 ::: {.column width="70%"}
 💬 **왜 이 프로젝트를 시작했을까?**
+<br>
+<br>
 
 - 내 예산 13만 달러... 대출까지 **20만 달러** 마련!!
 - 이 돈으로 살 수 있는 **최적의 옵션**은 뭘까?
-- 내가 원하는 옵션을 선택했을 때, **예산 안에서 이사할 수 있는 집**은 어디가 있을까?
+- 내가 원하는 옵션을 선택했을 때, **예산 안에서 선택할 수 있는 최고 옵션**은 뭐가 있을까?
 :::
 
 :::
@@ -368,8 +370,8 @@ X_train_all = np.concatenate([X_train_num, X_train_cat], axis=1)
 
 ## 🔍 분석 배경
 
-우리는 예산 내에서 **어떤 조건이 집값을 높이는 데 크게 기여하는지** 파악하고자  
-수업시간에 배운 **LassoCV** 모델을 활용하여 분석을 진행했습니다.
+예산 내에서 **어떤 조건이 집값을 높이는 데 크게 기여하는지** 파악하고자  
+수업시간에 배운 **LassoCV** 모델을 활용!!
 
 
 ---
@@ -674,22 +676,20 @@ optimal_alpha = lasso_cv.alpha_
 
 :::{.column-page}
 
-**📈 LassoCV 회귀 결과**
+
 
 ```{python}
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
+import plotly.express as px
 
-os.makedirs("images", exist_ok=True)
 top_n = 20
-top_coef = coef_df.head(top_n)
+top_coef = coef_df.head(top_n).sort_values("Coefficient", ascending=True)
 
-plt.figure(figsize=(10, 6))
-sns.barplot(x="Coefficient", y="Feature", data=top_coef)
-plt.title("Top 20 Important Features by Lasso Regression")
-plt.tight_layout()
-plt.savefig("images/lasso_top20.png")
+fig = px.bar(top_coef,
+             x="Coefficient", y="Feature",
+             orientation='h',
+             title="🏆 Lasso 회귀 결과: Top 20 영향 변수",
+             labels={"Coefficient": "계수", "Feature": "변수"})
+fig.update_layout(height=600)
 
 ```
 
@@ -697,21 +697,22 @@ plt.savefig("images/lasso_top20.png")
 
 :::{.column-page}
 
-**📈 LassoCV 회귀 결과(그룹화)**
+
 
 ```{python}
-## 변수 그룹별 평균 영향력 (Prefix 그룹 기준)
+# Prefix가 없다면 추가
 if 'Prefix' not in coef_df.columns:
     coef_df['Prefix'] = coef_df['Feature'].apply(lambda x: x.split('_')[0] if '_' in x else x)
 
-group_mean = coef_df.groupby('Prefix')['AbsCoefficient'].mean().sort_values(ascending=True)
+group_mean = coef_df.groupby('Prefix')['AbsCoefficient'].mean().sort_values(ascending=True).reset_index()
 
-plt.figure(figsize=(10, 6))
-group_mean.plot(kind='barh')
-# plt.xlabel("Mean Absolute Coefficient")
-# plt.title("Mean Feature Influence by Category (Prefix Grouping)")
-plt.tight_layout()
-plt.savefig("images/lasso_group_mean.png")
+fig = px.bar(group_mean,
+             x='AbsCoefficient', y='Prefix',
+             orientation='h',
+             title="📊 변수 그룹별 평균 영향력 (Lasso 계수 기준)",
+             labels={'AbsCoefficient': '평균 절대 계수', 'Prefix': '변수 그룹'})
+fig.update_layout(height=600)
+
 
 ```
 
@@ -798,7 +799,6 @@ display(condition_df)
 :::
 
 ---
-
 
 # 🏡 결론
 
