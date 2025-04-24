@@ -1,0 +1,109 @@
+---
+title: "**사고 싶었던 집, 모델이 말해준 진실** "
+author: "7조"
+format: 
+  dashboard:
+    theme: Simplex
+    scrolling: True
+    # logo: "img/teletobi.jpg"
+    # css: style.css
+    html:
+    includes:
+    #   in_header: path/to/font-awesome.css        
+                     
+---
+
+<style>
+.navbar {
+    background: linear-gradient(to right,rgb(190, 224, 231), #FFF9C4,rgb(205, 255, 249), #C8E6C9);
+}
+
+.navbar .active {
+    background:rgb(206, 225, 239) !important; /* 연한 베이지로 변경 및 우선 적용 */
+}
+
+</style>
+
+
+# 🏚️ 프로젝트 소개
+
+::: {layout-ncol=2}
+
+::: {.column width="30%"}
+<img src="image_ju/생각하는 이미지.png" alt="고민하는 사람" style="width:90%;">
+:::
+
+::: {.column width="70%"}
+
+<br>
+<br>
+
+💬 **왜 이 프로젝트를 시작했을까?**
+
+<br>
+
+- 내 예산 13만 달러... 대출까지 **20만 달러** 마련!!
+- 이 돈으로 살 수 있는 **최적의 옵션**은 뭘까?
+- 내가 **원하는 옵션**을 선택했을 때, **예산 안에서 이사할 수 있는 집**은 어디가 있을까?
+
+:::
+
+:::
+
+**🏷️선택된 주요 변수 정리**
+<style>
+  tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+  }
+</style>
+<div style="overflow-x: auto; max-height: 550px; border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
+
+<table style="width:100%; table-layout: fixed; border-collapse: collapse;">
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 20%;">
+    <col style="width: 60%;">
+  </colgroup>
+  <thead style="background-color: #f5f5f5;">
+    <tr>
+      <th>변수명</th>
+      <th>한글 해석</th>
+      <th>설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>SalePrice</code></td><td>판매 가격</td><td>실제 거래된 주택 가격 (<strong>목표 변수 y</strong>)</td></tr>
+    <tr><td><code>MSZoning</code></td><td>용도 지역</td><td>주택이 속한 구역의 용도 분류 (주거, 상업 등)<br><span style="color:red;">주거지역만 사용 (RH, RL, RM)</strong></td></tr>
+    <tr><td><code>LotArea</code></td><td>대지 면적</td><td>토지 면적 (제곱피트 단위)</td></tr>
+    <tr><td><code>Utilities</code></td><td>사용 가능 시설</td><td>전기, 수도, 가스 등의 이용 가능 여부<br><span style="color:red;">Allpub 제외 삭제</span></td></tr>
+    <tr><td><code>Neighborhood</code></td><td>이웃 지역</td><td>Ames 시의 물리적 구역 구분</td></tr>
+    <tr><td><code>BldgType</code></td><td>주택 유형</td><td>단독주택, 연립주택 등 구조 유형</td></tr>
+    <tr><td><code>OverallQual</code></td><td>전반적 자재 품질</td><td>자재 및 마감 품질 (1~10점 척도)</td></tr>
+    <tr><td><code>OverallCond</code></td><td>전반적 상태</td><td>유지 상태 등 건물 전반적인 평가</td></tr>
+    <tr><td><code>YearRemodAdd</code></td><td>리모델링 연도</td><td>최근 개보수 혹은 증축이 이루어진 연도</td></tr>
+    <tr><td><code>ExterQual</code></td><td>외장재 품질</td><td>외부 마감재의 품질 등급</td></tr>
+    <tr><td><code>ExterCond</code></td><td>외장재 상태</td><td>외부 마감재의 현재 상태</td></tr>
+    <tr><td><code>Foundation</code></td><td>기초 구조</td><td>건물의 기초 자재 유형 (콘크리트 등)</td></tr>
+    <tr><td><code>BsmtQual</code></td><td>지하 품질</td><td>지하실의 높이 및 품질</td></tr>
+    <tr><td><code>BsmtCond</code></td><td>지하 상태</td><td>지하실의 전반적인 상태</td></tr>
+    <tr><td><code>TotalBsmtSF</code></td><td>지하 면적</td><td>전체 지하실 면적 (제곱피트)</td></tr>
+    <tr><td><code>Heating</code></td><td>난방 방식</td><td>가스, 전기, 온수 등</td></tr>
+    <tr><td><code>HeatingQC</code></td><td>난방 품질</td><td>난방 방식의 품질과 상태 평가</td></tr>
+    <tr><td><code>CentralAir</code></td><td>중앙 냉방</td><td>중앙 냉방 시스템 유무 (Y/N)</td></tr>
+    <tr><td><code>FullBath</code></td><td>전용 욕실 수</td><td>지상에 위치한 전체 욕실 개수<br><span style="color:red;">0개는 삭제</span></td></tr>
+    <tr><td><code>KitchenAbvGr</code></td><td>지상 주방 수</td><td>지상층에 위치한 주방 수<br><span style="color:red;">0개는 삭제</span></td></tr>
+    <tr><td><code>TotRmsAbvGrd</code></td><td>지상 방 수</td><td>지상층의 총 방 개수 (욕실 제외)</td></tr>
+    <tr><td><code>Functional</code></td><td>주거 기능성</td><td>집의 기능적 결함 유무 및 평가</td></tr>
+    <tr><td><code>GarageCars</code></td><td>차고 차량 수용</td><td>차고에 주차 가능한 차량 수</td></tr>
+    <tr><td><code>GarageQual</code></td><td>차고 품질</td><td>차고 건축 품질 등급</td></tr>
+    <tr><td><code>GarageCond</code></td><td>차고 상태</td><td>차고의 현재 상태</td></tr>
+    <tr><td><code>OpenPorchSF</code></td><td>개방형 현관 면적</td><td>전면 개방된 포치(현관) 면적</td></tr>
+    <tr><td><code>PoolArea</code></td><td>수영장 면적</td><td>수영장이 있는 경우 그 면적</td></tr>
+    <tr><td><code>GeoRefNo</code></td><td>지리 참조 번호</td><td>위치 기반 고유 식별자</td></tr>
+    <tr><td><code>Latitude</code></td><td>위도</td><td>지리적 위치 정보 (위도)</td></tr>
+    <tr><td><code>Longitude</code></td><td>경도</td><td>지리적 위치 정보 (경도)</td></tr>
+  </tbody>
+</table>
+
+</div>
+
