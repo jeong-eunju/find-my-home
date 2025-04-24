@@ -1,0 +1,72 @@
+---
+title: "Ames Housing Analysis Dashboard"
+format:
+  html:
+    toc: true
+    theme: cosmo
+    code-fold: true
+    embed-resources: true
+    page-layout: full
+---
+
+## 📌 데이터 전처리 요약
+
+- `Overall`, `Exter`, `Garage`, `Bsmt` 등 주요 품질 변수는 점수화 및 가중 평균으로 계산
+- `SalePrice` 기준으로 예산 필터링 (130,000 ~ 200,000)
+- 수치형/범주형 변수 구분 후 전처리 (표준화 + 원핫)
+
+## 🔍 변수 중요도 분석 (LassoCV)
+
+```python
+import pandas as pd
+import plotly.express as px
+
+coef_df = pd.read_csv("coef_df.csv")  # 사전 계산된 결과 불러오기
+fig = px.bar(
+    coef_df.head(20),
+    x='Feature',
+    y='Coefficient',
+    title='LassoCV로 선택된 상위 20개 변수'
+)
+fig.show()
+```
+
+## 📍 Ames 주택 가격 지도
+
+```python
+import pandas as pd
+import plotly.express as px
+
+map_df = pd.read_csv("map_df.csv")
+fig = px.scatter_mapbox(
+    map_df,
+    lat="Latitude",
+    lon="Longitude",
+    size="PriceNorm",
+    color="SalePrice",
+    color_continuous_scale="Viridis",
+    size_max=50,
+    zoom=11,
+    hover_name="Neighborhood",
+    hover_data={"SalePrice": True, "Overall": True, "Exter": True, "Garage": True, "Bsmt": True},
+    title="🏠 Ames 주택 가격 지도 (높은 가격 = 큰 원)",
+    mapbox_style="open-street-map"
+)
+fig.update_layout(mapbox_center={"lat": 42.03, "lon": -93.62}, mapbox_zoom=12)
+fig.show()
+```
+
+## 📈 변수 그룹별 평균 중요도
+
+```python
+import pandas as pd
+import plotly.express as px
+
+group_df = pd.read_csv("grouped_coef_mean.csv")
+fig = px.bar(group_df, x='Prefix', y='AbsCoefficient', title='변수 그룹별 평균 영향력')
+fig.show()
+```
+
+---
+
+> 이 대시보드는 Ames Housing 데이터를 기반으로 주요 품질 변수, Lasso 기반 선택 변수, 지역별 집값 등을 직관적으로 분석합니다.
