@@ -1,0 +1,11 @@
+/* 대시보드 페이지 높이 고정된 거 해제 */
+.dashboard-page {
+    height: auto !important;
+    overflow-y: auto !important;
+  }
+  
+  /* 전체 화면 높이 고정되는 wrapper도 해제 */
+  body {
+    height: auto !important;
+    overflow-y: auto !important;
+  }
