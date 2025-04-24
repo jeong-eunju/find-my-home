@@ -232,7 +232,7 @@ plt.show()
 |----------------|-----------------------------|--------------------|------------------|
 | Overall        | OverallQual / OverallCond   | 0.79 / -0.11       | 7 : 3            |
 | Exter          | ExterQual / ExterCond       | 0.68 / 0.01        | 9 : 1            |
-| Garage         | GarageQual / GarageCond     | 0.26 / 0.24        | 7 : 3            |
+| Garage         | GarageQual / GarageCond     | 0.94 / 0.24        | 7 : 3            |
 | Bsmt           | BsmtQual / BsmtCond         | 0.58 / 0.20        | 7 : 3            |
 
 
@@ -369,27 +369,12 @@ X_train_all = np.concatenate([X_train_num, X_train_cat], axis=1)
 ## 🔍 분석 배경
 
 우리는 예산 내에서 **어떤 조건이 집값을 높이는 데 크게 기여하는지** 파악하고자  
-수업시간에 배운 `LassoCV` 모델을 활용하여 분석을 진행했습니다.
+수업시간에 배운 **LassoCV** 모델을 활용하여 분석을 진행했습니다.
 
-::: callout-note
-### 📌 Lasso 회귀란?
-
-- 중요도가 낮은 변수의 계수를 자동으로 **0으로 만들고**
-- 중요한 변수는 **살아남게** 하는 회귀 기법입니다.
-- 해석이 쉽고, **과적합 방지**에 효과적입니다.
-:::
-
-::: callout-note
-### 🧠 LassoCV 회귀란?
-
-- `LassoCV`는 Lasso 회귀에서 **최적의 정규화 강도(alpha)** 를 **교차검증으로 자동 선택**합니다.
-- 여러 alpha 후보 중 가장 성능이 좋은 것을 **데이터 기반으로 선택**합니다.
-- 결과적으로 **예측 성능 + 해석력** 모두 확보할 수 있습니다.
-:::
 
 ---
 
-## 🧪 분석 목표
+🧪 분석 목표
 
 - **내 예산 안에서는 어떤 집이 최고의 집일까?**
 - **변수 중요도**를 계수로 시각화
@@ -652,7 +637,44 @@ best_price_fixed, best_condition_fixed = find_best_with_constraints(
 
 :::{.column-page}
 
-📈 Lasso 회귀 결과: Top 20 변수
+**✅ LassoCV로 찾은 최적의 alpha(규제강도)**
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LassoCV
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.model_selection import train_test_split
+
+# alpha 범위 설정
+alpha = np.linspace(0, 0.5, 1000)
+
+# LassoCV 훈련
+lasso_cv = LassoCV(alphas=alpha, cv=5, max_iter=1000)
+lasso_cv.fit(X_train_all, y)  # X_train_all은 전처리된 전체 입력, y는 SalePrice
+
+# 평균 MSE 계산
+mean_mse = np.mean(lasso_cv.mse_path_, axis=1)
+optimal_alpha = lasso_cv.alpha_
+
+# # 시각화
+# plt.figure(figsize=(10, 6))
+# plt.plot(alpha, mean_mse, label='Mean CV MSE')
+# plt.axvline(optimal_alpha, color='red', linestyle='--', label=f'Optimal alpha = {optimal_alpha:.4f}')
+# plt.xlabel('Alpha')
+# _=plt.ylabel('Mean Cross-Validated MSE')
+# _=plt.title('LassoCV - Alpha vs MSE')
+# plt.legend()
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
+```
+
+:::
+
+:::{.column-page}
+
+**📈 LassoCV 회귀 결과**
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -674,6 +696,9 @@ plt.savefig("images/lasso_top20.png")
 :::
 
 :::{.column-page}
+
+**📈 LassoCV 회귀 결과(그룹화)**
+
 ```{python}
 ## 변수 그룹별 평균 영향력 (Prefix 그룹 기준)
 if 'Prefix' not in coef_df.columns:
@@ -692,51 +717,11 @@ plt.savefig("images/lasso_group_mean.png")
 
 :::
 
-:::{.column-page}
-```{python}
-from IPython.display import display
-display(pd.DataFrame([best_condition]))
-print(f"✅ 모델이 예측한 최고의 집값: ${best_price:,.0f}")
-```
 
-:::
+
 
 :::{.column-page}
-```{python}
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LassoCV
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.model_selection import train_test_split
-
-# alpha 범위 설정
-alpha = np.linspace(0, 0.5, 1000)
-
-# LassoCV 훈련
-lasso_cv = LassoCV(alphas=alpha, cv=5, max_iter=1000)
-lasso_cv.fit(X_train_all, y)  # X_train_all은 전처리된 전체 입력, y는 SalePrice
-
-# 평균 MSE 계산
-mean_mse = np.mean(lasso_cv.mse_path_, axis=1)
-optimal_alpha = lasso_cv.alpha_
-
-# 시각화
-plt.figure(figsize=(10, 6))
-plt.plot(alpha, mean_mse, label='Mean CV MSE')
-plt.axvline(optimal_alpha, color='red', linestyle='--', label=f'Optimal alpha = {optimal_alpha:.4f}')
-plt.xlabel('Alpha')
-_=plt.ylabel('Mean Cross-Validated MSE')
-_=plt.title('LassoCV - Alpha vs MSE')
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-```
-
-:::
-
-:::{.column-page}
-## ✅ 이 대시보드에는 포함된 것들
+**✅ 이 대시보드에는 포함된 것들**
 
 
 | **분석 내용** | **설명** |
@@ -749,9 +734,70 @@ plt.show()
 
 :::
 
+:::{.column-page}
+
+**✨예산 내 최고 스펙 조합 찾는 함수**
+```{python}
+#| echo: True
+#| eval: True
+
+def find_best_home_within_budget(df, model, scaler, encoder, num_cols, cat_cols, budget):
+    """
+    예산 내에서 가장 높은 예측 집값을 가지는 조건 조합을 찾음
+
+    Parameters:
+    - df: 전처리된 원본 데이터프레임
+    - model: 훈련된 LassoCV 모델
+    - scaler: 수치형 표준화 도구
+    - encoder: 범주형 인코더
+    - num_cols: 수치형 변수 리스트
+    - cat_cols: 범주형 변수 리스트
+    - budget: 예산 상한 (ex: 200000)
+
+    Returns:
+    - 최고 예측 가격과 해당 조건
+    """
+    best_price = -np.inf
+    best_condition = None
+
+    # 예산 내 데이터만 사용
+    df_budget = df[df['SalePrice'] <= budget]
+
+    # 중복 제거된 후보 범주 조합만 추출
+    unique_combinations = df_budget[cat_cols].drop_duplicates().astype(str)
+
+    # 수치형 평균 고정
+    input_num = pd.DataFrame([df_budget[num_cols].mean()], columns=num_cols)
+    input_num_scaled = scaler.transform(input_num)
+
+    for _, row in unique_combinations.iterrows():
+        input_cat = pd.DataFrame([row], columns=cat_cols).astype(str)
+        encoded_cat = encoder.transform(input_cat)
+        X_input = np.concatenate([input_num_scaled, encoded_cat], axis=1)
+        predicted = model.predict(X_input)[0]
+
+        if predicted > best_price:
+            best_price = predicted
+            best_condition = row.to_dict()
+
+    return best_price, best_condition
+
+# 함수 실행 (예산: $200,000)
+best_price, best_condition = find_best_home_within_budget(
+    df, lasso_cv, std_scaler, onehot, num_columns, cat_columns, budget=200000
+)
+
+print(f"✅ 예측된 집값: ${best_price:,.0f}")
+print("✅ 추천 조건:")
+
+condition_df = pd.DataFrame([best_condition]).T
+condition_df.columns = ['값']
+display(condition_df)
+```
+
+:::
+
 ---
-
-
 
 
 # 🏡 결론
