@@ -719,22 +719,6 @@ fig.update_layout(height=600)
 :::
 
 
-
-
-:::{.column-page}
-**✅ 이 대시보드에는 포함된 것들**
-
-
-| **분석 내용** | **설명** |
-|--------------|--------------------------------|
-| **Lasso 요약**             | `LassoCV` 모델은 교차검증으로 최적의 `alpha ≈ 0.5`를 선택하고, 중요하지 않은 변수는 자동으로 제거함으로써 과적합을 방지하고 해석력을 높임. |
-| **중요한 변수 Top 20**     | `Overall`, `GarageCars`, `GrLivArea`, `Exter`, `Bsmt`, `YearRemodAdd`, `Neighborhood` 등이 상위 변수로 나타남. 대부분 구조/품질 관련 변수. |
-| **변수 그룹별 영향력**     | 계수 절대값 평균 기준 영향력 상위 그룹은 `Overall`, `Garage`, `Bsmt`, `Exter`, `Neighborhood` 순. |
-| **예측된 최고의 집 조건** | `Overall`=10, `GarageCars`=3, `GrLivArea`>2000, `Exter`·`Bsmt`≥4.5, `YearRemodAdd`>2010, `Neighborhood`='NridgHt' |
-| **요약 결과**              | 예산 130,000~200,000달러 내에서 가장 효율적인 조건은 `Overall`≥7.5, `Exter`·`Garage`·`Bsmt`≥4.0, `GarageCars`≥2, `YearRemodAdd`>2005, `Neighborhood`='Gilbert', 'SawyerW' 등으로 분석됨. |
-
-:::
-
 :::{.column-page}
 
 **✨예산 내 최고 스펙 조합 찾는 함수**
