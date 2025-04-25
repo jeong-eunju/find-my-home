@@ -12,6 +12,7 @@ df[['SalePrice', 'OverallQual', 'OverallCond']].corr()  ## Qual이 상관계수 
 df['Overall'] = df['OverallQual'] * 0.7 + df['OverallCond'] * 0.3
 df
 
+####
 
 # 범주형 변수 qual, cond 가중치줘서 새로운 열 추가
 # 점수화 기준 (543210 스케일)
